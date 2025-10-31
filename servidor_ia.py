@@ -70,7 +70,7 @@ def explicar(data: Solicitud):
     # Llamar a Hugging Face API
     try:
         response = requests.post(
-            "https://api.huggingface.co/inference/models/mistralai/Mistral-7B-Instruct-v0.3",
+          "https://router.huggingface.co/hf-inference/v1/models/mistralai/Mistral-7B-Instruct-v0.3",
             headers=headers,
             json=payload,
             timeout=90
