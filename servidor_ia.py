@@ -7,28 +7,25 @@ Original file is located at
     https://colab.research.google.com/drive/1lmvZ0sINHSSwP_cIm9bizj82D3XUI3lv
 """
 
-# servidor_ia.py
+# servidor_ia.py  — versión Google Gemini 1.5 Flash 2.5
 from fastapi import FastAPI
 from pydantic import BaseModel
-import openai
+import google.generativeai as genai
 import os
 
-# 1️⃣ Crear app
-app = FastAPI(title="Servidor IA Telemedicina")
+app = FastAPI(title="Servidor IA Telemedicina - Gemini 1.5 Flash 2.5")
 
-# 2️⃣ Configurar API Key (Render usará variable de entorno)
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Configurar la API key desde variable de entorno
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# 3️⃣ Estructura de solicitud
 class Solicitud(BaseModel):
     diagnostico: str
     probabilidad: float
     sintomas: list[str]
 
-# 4️⃣ Endpoint principal
 @app.post("/explicar")
 def explicar(data: Solicitud):
-    # Caso de baja confianza
+    # Si la predicción es poco confiable
     if data.probabilidad < 0.9:
         return {
             "estado": "incertidumbre",
@@ -38,24 +35,22 @@ def explicar(data: Solicitud):
             )
         }
 
-    # Prompt dinámico
+    # Prompt que se envía al modelo
     prompt = f"""
     Paciente con {', '.join(data.sintomas)}.
     Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).
     Eres un asistente médico empático y profesional.
-    Explica brevemente qué es esta enfermedad,
-    sus causas comunes y brinda una orientación inicial en lenguaje claro.
+    Explica qué es esta enfermedad, sus causas comunes y cuidados iniciales
+    en lenguaje claro y comprensible para el paciente.
     """
 
     try:
-        respuesta = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=180
-        )
-
-        texto = respuesta.choices[0].message.content.strip()
-        return {"estado": "exito", "explicacion": texto}
-
+        # Crear el modelo (versión actual de Google)
+        model = genai.GenerativeModel("gemini-1.5-flash-002")  # última versión estable
+        respuesta = model.generate_content(prompt)
+        return {
+            "estado": "exito",
+            "explicacion": respuesta.text.strip()
+        }
     except Exception as e:
         return {"estado": "error", "mensaje": f"Excepción: {str(e)}"}
