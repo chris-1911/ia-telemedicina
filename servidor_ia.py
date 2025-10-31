@@ -46,7 +46,7 @@ def explicar(data: Solicitud):
 
     try:
         # Crear el modelo (versión actual de Google)
-        model = genai.GenerativeModel("gemini-1.5-flash-latest")  # última versión estable
+        model = genai.GenerativeModel("gemini-1.5-flash")  # última versión estable
         respuesta = model.generate_content(prompt)
         return {
             "estado": "exito",
