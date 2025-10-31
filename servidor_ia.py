@@ -35,11 +35,12 @@ def explicar(data: Solicitud):
         }
 
     prompt = (
-        f"Paciente con {', '.join(data.sintomas)}.\n"
-        f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).\n"
-        "Eres un asistente médico empático y profesional. "
-        "Explica qué es esta enfermedad, sus causas comunes y cuidados iniciales "
-        "en lenguaje claro y comprensible para el paciente."
+    f"Paciente con {', '.join(data.sintomas)}.\n"
+    f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).\n"
+    "Eres un asistente médico empático y profesional. "
+    "Responde de forma breve y clara (máximo 3 párrafos cortos). "
+    "Explica qué es la enfermedad y menciona dos o tres recomendaciones útiles. "
+    "No uses listas largas ni tecnicismos."
     )
 
     try:
@@ -49,8 +50,8 @@ def explicar(data: Solicitud):
                 {"role": "system", "content": "Eres un asistente médico empático y claro."},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=250,
-            temperature=0.7
+            max_tokens=150,
+            temperature=0.6
         )
         texto = response.choices[0].message.content
         return {"estado": "exito", "explicacion": texto.strip()}
