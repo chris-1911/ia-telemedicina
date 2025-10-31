@@ -7,69 +7,69 @@ Original file is located at
     https://colab.research.google.com/drive/1lmvZ0sINHSSwP_cIm9bizj82D3XUI3lv
 """
 
-# servidor_ia.py — versión OpenAI
+# servidor_ia.py — versión híbrida con calibración contextual (OpenAI)
 from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 import os
 
-app = FastAPI(title="Servidor IA Telemedicina - OpenAI GPT-4o-mini")
+# Crear app FastAPI
+app = FastAPI(title="Servidor IA Telemedicina - Híbrido")
 
-# Configurar cliente
+# Configurar cliente OpenAI
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Estructura de datos
 class Solicitud(BaseModel):
     diagnostico: str
     probabilidad: float
-    sintomas: list[str]
+    sintomas_locales: list[str] = []
+    sintomas_extras: list[str] = []
+
 
 @app.post("/explicar")
 def explicar(data: Solicitud):
-    """
-    Recibe diagnóstico y probabilidad desde el modelo local de síntomas
-    y genera una orientación médica con tono adaptado al nivel de confianza.
-    """
+    # Combinar todos los síntomas
+    todos_los_sintomas = data.sintomas_locales + data.sintomas_extras
 
-    # Generar contexto dinámico según confianza
-    if data.probabilidad < 0.8:
-        tono = (
-            "El modelo tiene una confianza moderada. "
-            "Explica de forma breve y cautelosa, evitando afirmar con certeza. "
-            "Usa expresiones como 'podría tratarse de' o 'es posible que sea'."
+    # Ajustar contexto según si hay síntomas adicionales
+    if data.sintomas_extras and len(data.sintomas_extras) > 0:
+        contexto_confianza = (
+            f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}, "
+            "pero el paciente añadió síntomas adicionales no contemplados en el dataset. "
+            "Reanaliza el caso completo considerando toda la información disponible. "
+            "Puedes asumir que la confianza global podría aumentar, sin dar porcentajes exactos."
         )
     else:
-        tono = (
-            "El modelo tiene alta confianza. "
-            "Explica con seguridad moderada y da recomendaciones iniciales claras."
+        contexto_confianza = (
+            f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}."
         )
 
-    # Prompt contextualizado
-    prompt = (
-        f"Paciente residente en la comuna Playa Delfín, zona rural costera del Guayas, Ecuador. "
-        f"Presenta los siguientes síntomas: {', '.join(data.sintomas)}. "
-        f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza). "
-        f"{tono} "
-        "Adapta tus respuestas a un entorno caluroso y con recursos médicos limitados. "
-        "Finaliza recordando que esta información no sustituye la consulta médica."
-    )
+    # Construcción del prompt
+    prompt = f"""
+    Paciente con {', '.join(todos_los_sintomas)}.
+    Diagnóstico probable: {data.diagnostico}.
+    {contexto_confianza}
+
+    Eres un asistente médico empático y profesional.
+    Explica en lenguaje breve y sencillo qué podría estar ocurriendo,
+    brinda orientación práctica sobre qué hacer y qué evitar,
+    y recuerda al paciente que puede agendar una cita médica desde la aplicación.
+    """
 
     try:
-        response = client.chat.completions.create(
+        respuesta = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": (
-                    "Eres un asistente médico empático, que explica en lenguaje claro pero de forma breve y comprensible para el paciente, los posibles cuidados y prevención, "
-                    "considerando las condiciones climáticas y de recursos médicos limitados."
-                    "Responde en máximo tres párrafos, sin tecnicismos, con tono humano."
-                )},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": "Eres un asistente médico que brinda orientación inicial, no diagnósticos definitivos."},
+                {"role": "user", "content": prompt},
             ],
             max_tokens=400,
-            temperature=0.6
+            temperature=0.6,
         )
 
-        texto = response.choices[0].message.content
-        return {"estado": "exito", "explicacion": texto.strip()}
+        texto = respuesta.choices[0].message.content.strip()
+        return {"estado": "exito", "explicacion": texto}
 
     except Exception as e:
         return {"estado": "error", "mensaje": f"Excepción: {str(e)}"}
