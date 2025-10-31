@@ -32,30 +32,36 @@ def explicar(data: Solicitud):
     # Combinar todos los síntomas
     todos_los_sintomas = data.sintomas_locales + data.sintomas_extras
 
-    # Ajustar contexto según si hay síntomas adicionales
-    if data.sintomas_extras and len(data.sintomas_extras) > 0:
-        contexto_confianza = (
-            f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}, "
-            "pero el paciente añadió síntomas adicionales no contemplados en el dataset. "
-            "Reanaliza el caso completo considerando toda la información disponible. "
-            "Puedes asumir que la confianza global podría aumentar, sin dar porcentajes exactos."
-        )
-    else:
-        contexto_confianza = (
-            f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}."
-        )
+        # Ajustar contexto según si hay síntomas adicionales
+        if data.probabilidad == 0.0:
+            contexto_confianza = (
+                "El modelo local no pudo estimar una probabilidad exacta, "
+                "ya que los síntomas ingresados no coincidieron con el dataset. "
+                "Sin embargo, ofrece una orientación general basada en la descripción del paciente."
+            )
+        elif data.sintomas_extras and len(data.sintomas_extras) > 0:
+            contexto_confianza = (
+                f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}, "
+                "pero el paciente añadió síntomas adicionales no contemplados en el dataset. "
+                "Reanaliza el caso completo considerando toda la información disponible. "
+                "Puedes asumir que la confianza global podría aumentar ligeramente, sin dar porcentajes exactos."
+            )
+        else:
+            contexto_confianza = (
+                f"El modelo local predijo un {data.probabilidad*100:.1f}% de confianza para {data.diagnostico}."
+            )
 
-    # Construcción del prompt
-    prompt = f"""
-    Paciente con {', '.join(todos_los_sintomas)}.
-    Diagnóstico probable: {data.diagnostico}.
-    {contexto_confianza}
+        # Construcción del prompt
+        prompt = f"""
+        Paciente con {', '.join(todos_los_sintomas)}.
+        Diagnóstico probable: {data.diagnostico}.
+        {contexto_confianza}
 
-    Eres un asistente médico empático y profesional.
-    Explica en lenguaje breve y sencillo qué podría estar ocurriendo,
-    brinda orientación práctica sobre qué hacer y qué evitar,
-    y recuerda al paciente que puede agendar una cita médica desde la aplicación.
-    """
+        Eres un asistente médico empático y profesional.
+        Explica en lenguaje breve y sencillo qué podría estar ocurriendo,
+        brinda orientación práctica sobre qué hacer y qué evitar,
+        y recuerda al paciente que puede agendar una cita médica desde la aplicación.
+        """
 
     try:
         respuesta = client.chat.completions.create(
