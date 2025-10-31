@@ -57,6 +57,11 @@ def explicar(data: Solicitud):
     Diagnóstico probable: {data.diagnostico}.
     {contexto_confianza}
 
+    Ten en cuenta que el paciente reside en la Comuna Playa Delfín,
+    una zona costera rural del cantón Posorja, provincia del Guayas, en Ecuador.
+    Es un entorno caluroso y húmedo, con recursos médicos limitados
+    y acceso restringido debido a la distancia y horarios reducidos a servicios de salud especializados.
+
     Eres un asistente médico empático y profesional.
     Explica en lenguaje breve y sencillo qué podría estar ocurriendo,
     brinda orientación práctica sobre qué hacer y qué evitar,
