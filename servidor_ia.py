@@ -59,7 +59,7 @@ def explicar(data: Solicitud):
             messages=[
                 {"role": "system", "content": (
                     "Eres un asistente médico empático, que explica en lenguaje claro pero de forma breve y comprensible para el paciente, los posibles cuidados y prevención, "
-                    "considerando las condiciones climáticas y de recursos médicos limitados.". "
+                    "considerando las condiciones climáticas y de recursos médicos limitados."
                     "Responde en máximo tres párrafos, sin tecnicismos, con tono humano."
                 )},
                 {"role": "user", "content": prompt}
