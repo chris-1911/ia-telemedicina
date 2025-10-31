@@ -25,35 +25,51 @@ class Solicitud(BaseModel):
 
 @app.post("/explicar")
 def explicar(data: Solicitud):
-    if data.probabilidad < 0.9:
-        return {
-            "estado": "incertidumbre",
-            "mensaje": (
-                f"La predicción tuvo solo {data.probabilidad*100:.1f}% de confianza. "
-                "Se recomienda agregar más síntomas o consultar a un médico."
-            )
-        }
+    """
+    Recibe diagnóstico y probabilidad desde el modelo local de síntomas
+    y genera una orientación médica con tono adaptado al nivel de confianza.
+    """
 
+    # Generar contexto dinámico según confianza
+    if data.probabilidad < 0.8:
+        tono = (
+            "El modelo tiene una confianza moderada. "
+            "Explica de forma breve y cautelosa, evitando afirmar con certeza. "
+            "Usa expresiones como 'podría tratarse de' o 'es posible que sea'."
+        )
+    else:
+        tono = (
+            "El modelo tiene alta confianza. "
+            "Explica con seguridad moderada y da recomendaciones iniciales claras."
+        )
+
+    # Prompt contextualizado
     prompt = (
-    f"Paciente con {', '.join(data.sintomas)}.\n"
-    f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).\n"
-    "Eres un asistente médico empático y profesional. "
-    "Responde de forma breve y clara (máximo 3 párrafos cortos). "
-    "Explica qué es la enfermedad y menciona dos o tres recomendaciones útiles. "
-    "No uses listas largas ni tecnicismos."
+        f"Paciente residente en la comuna Playa Delfín, zona rural costera del Guayas, Ecuador. "
+        f"Presenta los siguientes síntomas: {', '.join(data.sintomas)}. "
+        f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza). "
+        f"{tono} "
+        "Adapta tus respuestas a un entorno caluroso y con recursos médicos limitados. "
+        "Finaliza recordando que esta información no sustituye la consulta médica."
     )
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "Eres un asistente médico empático y claro."},
+                {"role": "system", "content": (
+                    "Eres un asistente médico empático, que explica en lenguaje claro pero de forma breve y comprensible para el paciente, los posibles cuidados y prevención, "
+                    "considerando las condiciones climáticas y de recursos médicos limitados.". "
+                    "Responde en máximo tres párrafos, sin tecnicismos, con tono humano."
+                )},
                 {"role": "user", "content": prompt}
             ],
-            max_tokens=150,
+            max_tokens=400,
             temperature=0.6
         )
+
         texto = response.choices[0].message.content
         return {"estado": "exito", "explicacion": texto.strip()}
+
     except Exception as e:
         return {"estado": "error", "mensaje": f"Excepción: {str(e)}"}
