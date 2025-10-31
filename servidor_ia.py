@@ -7,16 +7,16 @@ Original file is located at
     https://colab.research.google.com/drive/1lmvZ0sINHSSwP_cIm9bizj82D3XUI3lv
 """
 
-# servidor_ia.py  — versión Google Gemini 1.5 Flash 2.5
+# servidor_ia.py — versión OpenAI
 from fastapi import FastAPI
 from pydantic import BaseModel
-import google.generativeai as genai
+from openai import OpenAI
 import os
 
-app = FastAPI(title="Servidor IA Telemedicina - Gemini 1.5 Flash 2.5")
+app = FastAPI(title="Servidor IA Telemedicina - OpenAI GPT-4o-mini")
 
-# Configurar la API key desde variable de entorno
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Configurar cliente
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 class Solicitud(BaseModel):
     diagnostico: str
@@ -25,7 +25,6 @@ class Solicitud(BaseModel):
 
 @app.post("/explicar")
 def explicar(data: Solicitud):
-    # Si la predicción es poco confiable
     if data.probabilidad < 0.9:
         return {
             "estado": "incertidumbre",
@@ -35,22 +34,25 @@ def explicar(data: Solicitud):
             )
         }
 
-    # Prompt que se envía al modelo
-    prompt = f"""
-    Paciente con {', '.join(data.sintomas)}.
-    Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).
-    Eres un asistente médico empático y profesional.
-    Explica qué es esta enfermedad, sus causas comunes y cuidados iniciales
-    en lenguaje claro y comprensible para el paciente.
-    """
+    prompt = (
+        f"Paciente con {', '.join(data.sintomas)}.\n"
+        f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).\n"
+        "Eres un asistente médico empático y profesional. "
+        "Explica qué es esta enfermedad, sus causas comunes y cuidados iniciales "
+        "en lenguaje claro y comprensible para el paciente."
+    )
 
     try:
-        # Crear el modelo (versión actual de Google)
-        model = genai.GenerativeModel("gemini-1.5-flash")  # última versión estable
-        respuesta = model.generate_content(prompt)
-        return {
-            "estado": "exito",
-            "explicacion": respuesta.text.strip()
-        }
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Eres un asistente médico empático y claro."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=250,
+            temperature=0.7
+        )
+        texto = response.choices[0].message.content
+        return {"estado": "exito", "explicacion": texto.strip()}
     except Exception as e:
         return {"estado": "error", "mensaje": f"Excepción: {str(e)}"}
