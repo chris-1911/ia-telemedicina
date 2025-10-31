@@ -54,7 +54,10 @@ def explicar(data: Solicitud):
 
     # Construcción del prompt
     prompt = f"""
-    Paciente ({data.genero}) con {', '.join(todos_los_sintomas)}.
+    Eres un asistente médico empático y profesional.
+
+    El paciente se identifica como {data.genero}.
+    Tiene los siguientes síntomas: {', '.join(todos_los_sintomas)}.
     Diagnóstico probable: {data.diagnostico}.
     {contexto_confianza}
 
@@ -63,10 +66,10 @@ def explicar(data: Solicitud):
     Es un entorno caluroso y húmedo, con recursos médicos limitados
     y acceso restringido debido a la distancia y horarios reducidos a servicios de salud especializados.
 
-    Eres un asistente médico empático y profesional.
-    Explica en lenguaje breve y sencillo qué podría estar ocurriendo,
-    brinda orientación práctica sobre qué hacer y qué evitar adaptada al contexto local (clima, higiene, hidratación, acceso médico),
-    y recuerda al paciente que puede agendar una cita médica desde la aplicación.
+    Explicale al paciente directamente (en segunda persona) en lenguaje breve y sencillo qué podría estar ocurriendo,
+    que medidas puede tomar para aliviar sus síntomas, adaptada al contexto local (clima, acceso médico),
+    que cosas debería evitar,
+    y recuerdale que puede agendar una cita médica con un profesional disponible en la aplicación.
     """
 
     try:
@@ -75,11 +78,11 @@ def explicar(data: Solicitud):
             messages=[
                 {
                     "role": "system",
-                    "content": "Eres un asistente médico que brinda orientación inicial, no diagnósticos definitivos."
+                    "content": "Eres un asistente médico que brinda orientación inicial adaptada al contexto rural del Ecuador. No das diagnósticos definitivos."
                 },
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=400,
+            max_tokens=600,
             temperature=0.6,
         )
 
