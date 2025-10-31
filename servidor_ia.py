@@ -8,27 +8,27 @@ Original file is located at
 """
 
 # servidor_ia.py
-import requests
 from fastapi import FastAPI
 from pydantic import BaseModel
+import openai
 import os
 
-# 🔑 Token personal de Hugging Face (solo lectura)
-HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN")
+# 1️⃣ Crear app
+app = FastAPI(title="Servidor IA Telemedicina")
 
-# 🚀 Inicializar la app FastAPI
-app = FastAPI(title="Servidor IA Telemedicina", version="1.0")
+# 2️⃣ Configurar API Key (Render usará variable de entorno)
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# 🧩 Estructura de los datos recibidos desde Flutter
+# 3️⃣ Estructura de solicitud
 class Solicitud(BaseModel):
     diagnostico: str
     probabilidad: float
     sintomas: list[str]
 
-# 🧠 Endpoint principal
+# 4️⃣ Endpoint principal
 @app.post("/explicar")
 def explicar(data: Solicitud):
-    # Si la predicción tiene baja confianza
+    # Caso de baja confianza
     if data.probabilidad < 0.9:
         return {
             "estado": "incertidumbre",
@@ -38,70 +38,24 @@ def explicar(data: Solicitud):
             )
         }
 
-    # Construir el prompt
-    prompt = (
-        f"Paciente con {', '.join(data.sintomas)}.\n"
-        f"Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).\n"
-        "Eres un asistente médico empático y profesional. Explica brevemente "
-        "qué es esta enfermedad, sus causas comunes y los cuidados iniciales recomendados "
-        "en lenguaje sencillo y humano:\n"
-    )
+    # Prompt dinámico
+    prompt = f"""
+    Paciente con {', '.join(data.sintomas)}.
+    Diagnóstico probable: {data.diagnostico} ({data.probabilidad*100:.1f}% de certeza).
+    Eres un asistente médico empático y profesional.
+    Explica brevemente qué es esta enfermedad,
+    sus causas comunes y brinda una orientación inicial en lenguaje claro.
+    """
 
-    # Encabezados de autenticación
-    headers = {
-        "Authorization": f"Bearer {HUGGINGFACE_TOKEN}",
-        "Content-Type": "application/json"
-    }
-
-    # Cuerpo según formato actualizado (2025)
-    payload = {
-        "inputs": [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ],
-        "parameters": {
-            "max_new_tokens": 150,
-            "temperature": 0.7
-        }
-    }
-
-    # Llamar a Hugging Face API
     try:
-        response = requests.post(
-          "https://router.huggingface.co/hf-inference/v1/models/mistralai/Mistral-7B-Instruct-v0.3",
-            headers=headers,
-            json=payload,
-            timeout=90
+        respuesta = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=180
         )
 
-        # Si todo sale bien
-        if response.status_code == 200:
-            data = response.json()
-
-            # Detectar tipo de estructura en la respuesta
-            if isinstance(data, list) and len(data) > 0:
-                if "generated_text" in data[0]:
-                    text = data[0]["generated_text"]
-                elif "content" in data[0] and len(data[0]["content"]) > 0:
-                    text = data[0]["content"][0].get("text", "")
-                else:
-                    text = str(data)
-            elif isinstance(data, dict):
-                text = data.get("generated_text", str(data))
-            else:
-                text = str(data)
-
-            return {"estado": "exito", "explicacion": text.strip()}
-
-        # Si Hugging Face devuelve error (401, 404, 503, etc.)
-        else:
-            return {
-                "estado": "error",
-                "mensaje": f"Error {response.status_code}: {response.text}"
-            }
+        texto = respuesta.choices[0].message.content.strip()
+        return {"estado": "exito", "explicacion": texto}
 
     except Exception as e:
-        # Cualquier error de red/DNS/timeouts
         return {"estado": "error", "mensaje": f"Excepción: {str(e)}"}
