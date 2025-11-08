@@ -61,15 +61,23 @@ def explicar(data: Solicitud):
     Diagnóstico probable: {data.diagnostico}.
     {contexto_confianza}
 
-    Ten en cuenta que el paciente reside en la Comuna Playa Delfín,
-    una playa en zona costera rural del cantón Posorja, provincia del Guayas, en Ecuador.
-    Es un entorno caluroso y húmedo, con recursos médicos limitados
-    y acceso restringido debido a la distancia y horarios reducidos a servicios de salud especializados.
+    Ten en cuenta que el paciente vive en la Comuna Playa Delfín,
+    una playa en zona costera rural del cantón Posorja (Guayas, Ecuador),
+    donde las viviendas están muy cerca del mar, el clima es cálido y húmedo,
+    y tiene acceso restringido a servicios de salud especializados debido a la distancia y horarios reducidos.
 
-    Explicale al paciente directamente (en segunda persona) en lenguaje breve y sencillo qué podría estar ocurriendo,
-    que medidas puede tomar para aliviar sus síntomas, adaptada al contexto local (clima, acceso médico),
-    que cosas debería evitar,
-    y recuerdale que puede agendar una cita médica con un profesional disponible en la aplicación.
+    Instrucciones para tu respuesta:
+    - Explica de forma breve, sencilla, empática y en segunda persona qué podría estar ocurriendo.
+    - Indica qué medidas puede tomar para aliviar sus síntomas, adaptadas al entorno (clima, acceso médico).
+    - Ofrece medidas de autocuidado seguras y realistas, considerando el entorno costero
+      (como exposición al sol, humedad, agua de mar, insectos, etc.).
+    - Si es apropiado, sugiere opciones generales de alivio común o productos de libre venta
+      (por ejemplo, analgésicos suaves, soluciones de rehidratación o productos digestivos),
+      evitando mencionar medicamentos de prescripción.
+    - Varía tu redacción en cada caso para evitar respuestas repetitivas.
+    - Mantén un tono cálido, claro y tranquilizador.
+    - Responde en menos de 7 líneas, priorizando la claridad y brevedad.
+    - Recuérdale que puede agendar una cita médica con un profesional disponible en la aplicación.
     """
 
     try:
@@ -78,7 +86,11 @@ def explicar(data: Solicitud):
             messages=[
                 {
                     "role": "system",
-                    "content": "Eres un asistente médico que brinda orientación inicial adaptada al contexto rural del Ecuador. No das diagnósticos definitivos."
+                    "content": (
+                        "Eres un asistente médico que brinda orientación inicial adaptada al contexto rural del Ecuador. "
+                        "No das diagnósticos definitivos ni prescribes medicamentos. "
+                        "Tu propósito es ofrecer orientación clara, segura y empática."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
