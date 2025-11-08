@@ -76,7 +76,8 @@ def explicar(data: Solicitud):
       evitando mencionar medicamentos de prescripción.
     - Varía tu redacción en cada caso para evitar respuestas repetitivas.
     - Mantén un tono cálido, claro y tranquilizador.
-    - Responde en menos de 7 líneas, priorizando la claridad y brevedad.
+    - Responde de forma breve (máximo 7 líneas) pero si lo consideras útil,
+      usa viñetas o separa las recomendaciones en frases cortas para mayor claridad.
     - Recuérdale que puede agendar una cita médica con un profesional disponible en la aplicación.
     """
 
